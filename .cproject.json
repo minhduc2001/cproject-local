@@ -1,0 +1,14 @@
+{
+  "projects": [
+    {
+      "name": "My Frontend App",
+      "path": "path/to/frontend",
+      "command": "npm run dev"
+    },
+    {
+      "name": "My Backend API",
+      "path": "path/to/backend",
+      "command": "npm start"
+    }
+  ]
+}
