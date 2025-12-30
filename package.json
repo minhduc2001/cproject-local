@@ -7,6 +7,10 @@
   "engines": {
     "vscode": "^1.107.0"
   },
+  "repository": {
+    "url": "https://github.com/minhduc2001/cproject-local",
+    "type": "git"
+  },
   "categories": [
     "Other"
   ],
