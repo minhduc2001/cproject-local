@@ -42,6 +42,10 @@
         "title": "Detect"
       },
       {
+        "command": "cproject-local.detectAllProjects",
+        "title": "Detect All"
+      },
+      {
         "command": "cproject-local.deleteScript",
         "title": "Delete Script"
       },
@@ -52,6 +56,10 @@
       {
         "command": "cproject-local.markManual",
         "title": "Mark/Unmark Manual"
+      },
+      {
+        "command": "cproject-local.addToWhitelist",
+        "title": "Add Project to Whitelist"
       }
     ],
     "menus": {
@@ -68,6 +76,16 @@
         },
         {
           "command": "cproject-local.deleteProject",
+          "when": "view == cproject-local.treeView && viewItem == project",
+          "group": "navigation"
+        },
+        {
+          "command": "cproject-local.detectAllProjects",
+          "when": "view == cproject-local.treeView && viewItem == project",
+          "group": "navigation"
+        },
+        {
+          "command": "cproject-local.addToWhitelist",
           "when": "view == cproject-local.treeView && viewItem == project",
           "group": "navigation"
         },
@@ -89,9 +107,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "cproject-local.refreshProjects",
+          "command": "cproject-local.detectAllProjects",
           "when": "view == cproject-local.treeView",
           "group": "navigation@2"
+        },
+        {
+          "command": "cproject-local.refreshProjects",
+          "when": "view == cproject-local.treeView",
+          "group": "navigation@3"
         }
       ]
     },
