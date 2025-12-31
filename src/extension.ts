@@ -7,17 +7,16 @@ interface ProjectConfig {
 	path: string;
 	scripts: string[];
 	detectedPM?: string;
+	manual?: boolean;
 }
 
 interface ScriptNode {
 	script: string;
 	project: ProjectConfig;
-	pm?: string;
 }
 
 // key = `${project.name}:${script}`
 const runningScripts = new Map<string, vscode.Terminal>();
-const scriptPMs = new Map<string, string>(); // lưu PM riêng từng script
 
 export async function activate(context: vscode.ExtensionContext) {
 	console.log('cproject-local activated');
@@ -51,8 +50,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				if (!workspace) return;
 
 				const key = `${node.project.name}:${node.script}`;
-				const pm = scriptPMs.get(key) || node.project.detectedPM || 'npm';
-
+				const pm = node.project.detectedPM || 'npm';
 				const command = pm === 'npm' ? `npm run ${node.script}` : `${pm} ${node.script}`;
 				const projectPath = vscode.Uri.joinPath(workspace.uri, node.project.path).fsPath;
 
@@ -85,7 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				const key = `${node.project.name}:${node.script}`;
 				const terminal = runningScripts.get(key);
 				if (terminal) {
-					runningScripts.delete(key); // delete trước
+					runningScripts.delete(key);
 					terminal.sendText('\x03');
 					terminal.dispose();
 				}
@@ -95,21 +93,124 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	// -------------------------
-	// Change PM
+	// Change PM (project level)
 	// -------------------------
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'cproject-local.changePM',
-			async (node: ScriptNode) => {
+			async (node: any) => {
+				const project: ProjectConfig = node.project;
 				const pmOptions = ['npm', 'yarn', 'pnpm', 'bun'];
 				const selectedPM = await vscode.window.showQuickPick(pmOptions, {
-					placeHolder: 'Select package manager for this script',
+					placeHolder: `Select package manager for project ${project.name}`,
 					ignoreFocusOut: true,
 				});
 				if (!selectedPM) return;
 
-				const key = `${node.project.name}:${node.script}`;
-				scriptPMs.set(key, selectedPM);
+				project.detectedPM = selectedPM;
+
+				const workspace = vscode.workspace.workspaceFolders?.[0];
+				if (workspace) {
+					const configPath = vscode.Uri.joinPath(workspace.uri, '.cproject.json').fsPath;
+					if (fs.existsSync(configPath)) {
+						const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+						const idx = config.projects.findIndex((p: any) => p.path === project.path);
+						if (idx >= 0) {
+							config.projects[idx].detectedPM = selectedPM;
+							fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+						}
+					}
+				}
+
+				projectsProvider.refresh();
+			}
+		)
+	);
+
+	// -------------------------
+	// Mark/Unmark Manual
+	// -------------------------
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'cproject-local.markManual',
+			async (node: any) => {
+				const project: ProjectConfig = node.project;
+				project.manual = !project.manual;
+
+				const workspace = vscode.workspace.workspaceFolders?.[0];
+				if (!workspace) return;
+
+				const configPath = vscode.Uri.joinPath(workspace.uri, '.cproject.json').fsPath;
+				if (!fs.existsSync(configPath)) return;
+
+				const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+				const idx = config.projects.findIndex((p: ProjectConfig) => p.path === project.path);
+				if (idx >= 0) {
+					config.projects[idx].manual = project.manual;
+					fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+				}
+
+				vscode.window.showInformationMessage(
+					`Project "${project.name}" is now ${project.manual ? 'Manual' : 'Auto-detect'}`
+				);
+				projectsProvider.refresh();
+			}
+		)
+	);
+
+	// -------------------------
+	// Delete Project
+	// -------------------------
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'cproject-local.deleteProject',
+			async (node: any) => {
+				const project: ProjectConfig = node.project;
+				const workspace = vscode.workspace.workspaceFolders?.[0];
+				if (!workspace) return;
+
+				const configPath = vscode.Uri.joinPath(workspace.uri, '.cproject.json').fsPath;
+				if (!fs.existsSync(configPath)) return;
+
+				const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+				config.projects = config.projects.filter((p: ProjectConfig) => p.path !== project.path);
+				fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+
+				projectsProvider.refresh();
+			}
+		)
+	);
+
+	// -------------------------
+	// Delete Script
+	// -------------------------
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'cproject-local.deleteScript',
+			async (node: ScriptNode) => {
+				const project = node.project;
+				const script = node.script;
+				const workspace = vscode.workspace.workspaceFolders?.[0];
+				if (!workspace) return;
+
+				const configPath = vscode.Uri.joinPath(workspace.uri, '.cproject.json').fsPath;
+				if (!fs.existsSync(configPath)) return;
+
+				const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+				const proj = config.projects.find((p: ProjectConfig) => p.path === project.path);
+				if (proj) {
+					proj.scripts = proj.scripts.filter((s: string) => s !== script);
+					fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+				}
+
+				const key = `${project.name}:${script}`;
+				const terminal = runningScripts.get(key);
+				if (terminal) {
+					terminal.sendText('\x03');
+					terminal.dispose();
+					runningScripts.delete(key);
+				}
+
 				projectsProvider.refresh();
 			}
 		)
@@ -145,6 +246,14 @@ export async function activate(context: vscode.ExtensionContext) {
 				const PM_PRIORITY = ['npm', 'yarn', 'bun', 'pnpm'];
 				const projects: ProjectConfig[] = [];
 
+				const configFileUri = vscode.Uri.joinPath(workspaceRoot, '.cproject.json');
+				let existingConfig: { projects: ProjectConfig[] } = { projects: [] };
+				if (fs.existsSync(configFileUri.fsPath)) {
+					try {
+						existingConfig = JSON.parse(fs.readFileSync(configFileUri.fsPath, 'utf8'));
+					} catch { }
+				}
+
 				for (const file of packageJsonFiles) {
 					const projectDir = path.dirname(file.fsPath);
 					const relativePath = path.relative(workspaceRoot.fsPath, projectDir);
@@ -154,6 +263,12 @@ export async function activate(context: vscode.ExtensionContext) {
 						const pkg = JSON.parse(raw.toString());
 						const scripts = Object.keys(pkg.scripts || {});
 						if (scripts.length === 0) continue;
+
+						const existingProject = existingConfig.projects.find(p => p.path === relativePath);
+						if (existingProject?.manual) {
+							projects.push(existingProject);
+							continue;
+						}
 
 						const pmCandidates: string[] = [];
 						if (fs.existsSync(path.join(projectDir, 'package-lock.json'))) pmCandidates.push('npm');
@@ -168,11 +283,11 @@ export async function activate(context: vscode.ExtensionContext) {
 							path: relativePath,
 							scripts,
 							detectedPM,
+							manual: false
 						});
 					} catch { }
 				}
 
-				const configFileUri = vscode.Uri.joinPath(workspaceRoot, '.cproject.json');
 				await vscode.workspace.fs.writeFile(
 					configFileUri,
 					Buffer.from(JSON.stringify({ projects }, null, 2), 'utf8')
@@ -237,7 +352,7 @@ class ProjectsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 	private createScriptItem(script: string, project: ProjectConfig): vscode.TreeItem {
 		const key = `${project.name}:${script}`;
 		const isRunning = runningScripts.has(key);
-		const pm = scriptPMs.get(key) || project.detectedPM || 'npm';
+		const pm = project.detectedPM || 'npm';
 
 		const item = new vscode.TreeItem(`${script} [${pm}]`, vscode.TreeItemCollapsibleState.None);
 		item.contextValue = 'script';
@@ -251,15 +366,11 @@ class ProjectsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 			isRunning ? 'running.svg' : 'stopped.svg'
 		);
 
-		// click script → run/stop
 		item.command = {
 			command: isRunning ? 'cproject-local.stopScript' : 'cproject-local.runScript',
 			title: isRunning ? 'Stop' : 'Run',
 			arguments: [{ script, project }]
 		};
-
-		// thêm context menu để đổi PM
-		item.contextValue = 'scriptWithPM';
 
 		return item;
 	}

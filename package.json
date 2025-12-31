@@ -3,7 +3,7 @@
   "displayName": "CProject Local",
   "description": "VSCode extension to manage local projects and run scripts",
   "publisher": "ducnm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -22,14 +22,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "cproject-local.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "cproject-local.startProject",
-        "title": "Start Project"
-      },
-      {
         "command": "cproject-local.runScript",
         "title": "Run Script"
       },
@@ -43,30 +35,50 @@
       },
       {
         "command": "cproject-local.refreshProjects",
-        "title": "Refresh Projects"
+        "title": "Refresh"
       },
       {
         "command": "cproject-local.detectProjects",
-        "title": "Detect Projects"
+        "title": "Detect"
+      },
+      {
+        "command": "cproject-local.deleteScript",
+        "title": "Delete Script"
+      },
+      {
+        "command": "cproject-local.deleteProject",
+        "title": "Delete Project"
+      },
+      {
+        "command": "cproject-local.markManual",
+        "title": "Mark/Unmark Manual"
       }
     ],
     "menus": {
       "view/item/context": [
         {
           "command": "cproject-local.changePM",
-          "when": "view == cproject-local.treeView && viewItem == scriptWithPM",
+          "when": "view == cproject-local.treeView && viewItem == project",
+          "group": "navigation"
+        },
+        {
+          "command": "cproject-local.markManual",
+          "when": "view == cproject-local.treeView && viewItem == project",
+          "group": "navigation"
+        },
+        {
+          "command": "cproject-local.deleteProject",
+          "when": "view == cproject-local.treeView && viewItem == project",
+          "group": "navigation"
+        },
+        {
+          "command": "cproject-local.deleteScript",
+          "when": "view == cproject-local.treeView && viewItem == script",
           "group": "navigation"
         },
         {
           "command": "cproject-local.stopScript",
-          "when": "view == cproject-local.treeView && viewItem == scriptWithPM",
-          "group": "navigation"
-        }
-      ],
-      "editor/title": [
-        {
-          "when": "resourceFilename == '.cproject.json'",
-          "command": "cproject-local.startProject",
+          "when": "view == cproject-local.treeView && viewItem == script",
           "group": "navigation"
         }
       ],

@@ -1,24 +1,49 @@
 # CProject Local
 
-VSCode extension to manage local projects and run scripts.
+**CProject Local** là một VSCode extension giúp bạn quản lý project local trong workspace và chạy script nhanh chóng theo package manager (npm, yarn, pnpm, bun).
+
+---
 
 ## Features
 
-- Detect projects automatically (npm, yarn, pnpm, bun)
-- Run and stop scripts from TreeView
-- Choose package manager per script
-- Status icons: running / stopped
-- Supports multiple workspace folders
+- Quét workspace để detect project từ `package.json`.
+- Chạy / dừng script trực tiếp từ Tree View.
+- Chọn package manager cho toàn project (project-level).
+- Đánh dấu project **Manual** để `detectProjects` không ghi đè.
+- Xóa project hoặc script trực tiếp từ menu chuột phải.
+- Refresh Tree View từ `.cproject.json`.
+
+---
 
 ## Usage
 
-1. Open a workspace with projects
-2. Detect projects (`CProject: Detect Projects` command)
-3. Expand project in CProject Explorer
-4. Click script to run or stop
-5. Right-click script → Change Package Manager
+### Tree View
 
-## Requirements
+- **Project Node** (chuột phải):
 
-- VSCode >= 1.107.0
-- Node.js installed
+  - **Change PM**: Chọn package manager cho project.
+  - **Mark/Unmark Manual**: Giữ project nguyên khi detect.
+  - **Delete Project**: Xóa project khỏi `.cproject.json`.
+
+- **Script Node**:
+  - Click → **Run / Stop script**.
+  - Chuột phải → **Delete Script**.
+
+### Tree View Title Buttons
+
+- **Detect Projects** → Phát hiện project mới từ workspace.
+- **Refresh Projects** → Reload tree view từ `.cproject.json`.
+
+---
+
+## Notes
+
+- `.cproject.json` lưu cấu hình project và script.
+- PM được chọn ở **project-level**, áp dụng cho tất cả script trong project.
+- Terminal tự động dừng script cũ nếu chạy trùng script mới.
+
+---
+
+## License
+
+MIT License
