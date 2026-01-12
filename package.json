@@ -1,9 +1,9 @@
 {
   "name": "cproject-local",
   "displayName": "CProject Local",
-  "description": "VSCode extension to manage local projects and run scripts",
+  "description": "Manage Node.js and Docker projects, run scripts and docker-compose commands with ease",
   "publisher": "ducnm",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -35,15 +35,18 @@
       },
       {
         "command": "cproject-local.refreshProjects",
-        "title": "Refresh"
+        "title": "Refresh",
+        "icon": "$(refresh)"
       },
       {
         "command": "cproject-local.detectProjects",
-        "title": "Detect"
+        "title": "Detect Projects",
+        "icon": "$(sync)"
       },
       {
         "command": "cproject-local.detectAllProjects",
-        "title": "Detect All"
+        "title": "Detect All Projects",
+        "icon": "$(sync-ignored)"
       },
       {
         "command": "cproject-local.deleteScript",
@@ -60,10 +63,33 @@
       {
         "command": "cproject-local.addToWhitelist",
         "title": "Add Project to Whitelist"
+      },
+      {
+        "command": "cproject-local.searchProjects",
+        "title": "CProject: Search Projects",
+        "icon": "$(search)"
+      },
+      {
+        "command": "cproject-local.changeConfigPath",
+        "title": "CProject: Change Config Save Location",
+        "icon": "$(folder)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "cproject-local.searchProjects",
+        "key": "ctrl+shift+p",
+        "mac": "cmd+shift+p",
+        "when": "editorTextFocus"
       }
     ],
     "menus": {
       "view/item/context": [
+        {
+          "command": "cproject-local.changeConfigPath",
+          "when": "view == cproject-local.treeView && viewItem == configInfo",
+          "group": "navigation"
+        },
         {
           "command": "cproject-local.changePM",
           "when": "view == cproject-local.treeView && viewItem == project",
@@ -104,19 +130,45 @@
         {
           "command": "cproject-local.detectProjects",
           "when": "view == cproject-local.treeView",
-          "group": "navigation@1"
+          "group": "navigation@1",
+          "icon": "$(sync)"
         },
         {
           "command": "cproject-local.detectAllProjects",
           "when": "view == cproject-local.treeView",
-          "group": "navigation@2"
+          "group": "navigation@2",
+          "icon": "$(sync-ignored)"
         },
         {
           "command": "cproject-local.refreshProjects",
           "when": "view == cproject-local.treeView",
-          "group": "navigation@3"
+          "group": "navigation@3",
+          "icon": "$(refresh)"
+        },
+        {
+          "command": "cproject-local.searchProjects",
+          "when": "view == cproject-local.treeView",
+          "group": "navigation@4",
+          "icon": "$(search)"
+        },
+        {
+          "command": "cproject-local.changeConfigPath",
+          "when": "view == cproject-local.treeView",
+          "group": "navigation@5",
+          "icon": "$(folder)"
         }
       ]
+    },
+    "configuration": {
+      "title": "CProject Local",
+      "properties": {
+        "cproject-local.configPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to save .cproject.json file. Leave empty to save in workspace root. You can use absolute path or '~' for home directory.",
+          "markdownDescription": "Custom path to save `.cproject.json` file. Leave empty to save in workspace root. You can use:\n- Absolute path: `C:\\Users\\YourName\\AppData\\Local\\cproject`\n- Home directory: `~/.cproject`\n- Empty (default): Save in workspace root"
+        }
+      }
     },
     "viewsContainers": {
       "activitybar": [
